@@ -9,6 +9,9 @@ import java.util.concurrent.CompletableFuture;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+/**
+ * CompletableFuture 클래스를 사용한 동시성 테스트 검증
+ */
 @SpringBootTest
 public class PointIntegrationTest {
 
