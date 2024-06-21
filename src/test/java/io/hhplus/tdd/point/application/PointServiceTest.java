@@ -1,6 +1,5 @@
-package io.hhplus.tdd.point;
+package io.hhplus.tdd.point.application;
 
-import io.hhplus.tdd.point.application.PointService;
 import io.hhplus.tdd.point.domain.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
