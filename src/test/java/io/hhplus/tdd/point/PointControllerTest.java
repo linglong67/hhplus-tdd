@@ -1,5 +1,10 @@
 package io.hhplus.tdd.point;
 
+import io.hhplus.tdd.point.application.PointService;
+import io.hhplus.tdd.point.domain.PointHistory;
+import io.hhplus.tdd.point.domain.TransactionType;
+import io.hhplus.tdd.point.domain.UserPoint;
+import io.hhplus.tdd.point.presentation.PointController;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -17,6 +22,9 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+/**
+ * MockMvc 사용하여 엔드포인트 요청 테스트 및 정상 응답에 대한 status, json 값 검증
+ */
 @WebMvcTest(PointController.class)
 class PointControllerTest {
 
@@ -28,11 +36,14 @@ class PointControllerTest {
 
     @Test
     void 포인트_조회() throws Exception {
+        // given
         long id = 1L;
         long amount = 1000L;
 
+        // when
         when(pointService.getPoint(anyLong())).thenReturn(new UserPoint(id, amount, 0));
 
+        // then
         mockMvc.perform(get("/point/{id}", id))
                .andExpect(status().isOk())
                .andExpect(jsonPath("$.id").value(id))
@@ -43,14 +54,17 @@ class PointControllerTest {
 
     @Test
     void 포인트_내역_조회() throws Exception {
+        // given
         long id = 1L;
         List<PointHistory> expected = List.of(
                 new PointHistory(1, 1, 500, TransactionType.CHARGE, 0),
                 new PointHistory(2, 1, 200, TransactionType.USE, 0)
         );
 
+        // when
         when(pointService.getPointHistories(anyLong())).thenReturn(expected);
 
+        // then
         mockMvc.perform(get("/point/{id}/histories", id))
                .andExpect(status().isOk())
                .andExpect(jsonPath("$[0].id").value(1))
@@ -67,12 +81,15 @@ class PointControllerTest {
 
     @Test
     void 포인트_충전() throws Exception {
+        // given
         long id = 1L;
         long amount = 1000L;
         long balance = 2000L;
 
+        // when
         when(pointService.chargePoint(anyLong(), anyLong())).thenReturn(new UserPoint(id, balance + amount, 0));
 
+        // then
         mockMvc.perform(patch("/point/{id}/charge", id)
                        .contentType(MediaType.APPLICATION_JSON)
                        .content(String.valueOf(amount)))
@@ -85,12 +102,15 @@ class PointControllerTest {
 
     @Test
     void 포인트_사용() throws Exception {
+        // given
         long id = 1L;
         long amount = 1000L;
         long balance = 2000L;
 
+        // when
         when(pointService.usePoint(anyLong(), anyLong())).thenReturn(new UserPoint(id, balance - amount, 0));
 
+        // then
         mockMvc.perform(patch("/point/{id}/use", id)
                        .contentType(MediaType.APPLICATION_JSON)
                        .content(String.valueOf(amount)))

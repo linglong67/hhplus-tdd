@@ -1,5 +1,6 @@
-package io.hhplus.tdd.point;
+package io.hhplus.tdd.point.application;
 
+import io.hhplus.tdd.point.domain.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
