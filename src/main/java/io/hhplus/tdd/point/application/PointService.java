@@ -5,6 +5,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 @Service
 @RequiredArgsConstructor
@@ -12,6 +14,7 @@ public class PointService {
 
     private final UserPointRepository userPointRepository;
     private final PointHistoryRepository pointHistoryRepository;
+    private final Lock lock = new ReentrantLock();
 
     public UserPoint getPoint(long id) {
         validateUser(id);
@@ -25,18 +28,26 @@ public class PointService {
         return pointHistoryRepository.selectAllByUserId(id);
     }
 
-    public synchronized UserPoint chargePoint(long id, long amount) {
+    public UserPoint chargePoint(long id, long amount) {
+        lock.lock();
+
         validateUser(id);
         validateAmount(amount);
 
         UserPoint userPoint = userPointRepository.selectById(id);
 
-        pointHistoryRepository.insert(id, amount, TransactionType.CHARGE, System.currentTimeMillis());
+        try {
+            pointHistoryRepository.insert(id, amount, TransactionType.CHARGE, System.currentTimeMillis());
 
-        return userPointRepository.insertOrUpdate(id, userPoint.point() + amount);
+            return userPointRepository.insertOrUpdate(id, userPoint.point() + amount);
+        } finally {
+            lock.unlock();
+        }
     }
 
-    public synchronized UserPoint usePoint(long id, long amount) {
+    public UserPoint usePoint(long id, long amount) {
+        lock.lock();
+
         validateUser(id);
         validateAmount(amount);
 
@@ -45,9 +56,13 @@ public class PointService {
             throw new IllegalStateException("잔액을 초과하여 사용할 수 없습니다.");
         }
 
-        pointHistoryRepository.insert(id, amount, TransactionType.USE, System.currentTimeMillis());
+        try {
+            pointHistoryRepository.insert(id, amount, TransactionType.USE, System.currentTimeMillis());
 
-        return userPointRepository.insertOrUpdate(id, userPoint.point() - amount);
+            return userPointRepository.insertOrUpdate(id, userPoint.point() - amount);
+        } finally {
+            lock.unlock();
+        }
     }
 
     private void validateUser(long id) {

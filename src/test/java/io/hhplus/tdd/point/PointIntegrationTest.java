@@ -19,7 +19,7 @@ public class PointIntegrationTest {
     void 동시에_다수의_충전_사용_요청처리() {
         // given
         long id = 1L;
-        pointService.chargePoint(id, 100000);
+        pointService.chargePoint(id, 10000);
 
         // when
         CompletableFuture.allOf(
@@ -35,6 +35,6 @@ public class PointIntegrationTest {
         ).join();
 
         // then
-        assertThat(pointService.getPoint(id).point()).isEqualTo(100000 - 8000 + 3000 - 4000);
+        assertThat(pointService.getPoint(id).point()).isEqualTo(10000 - 8000 + 3000 - 4000);
     }
 }
