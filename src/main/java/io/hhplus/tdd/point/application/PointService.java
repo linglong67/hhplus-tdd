@@ -25,7 +25,7 @@ public class PointService {
         return pointHistoryRepository.selectAllByUserId(id);
     }
 
-    public UserPoint chargePoint(long id, long amount) {
+    public synchronized UserPoint chargePoint(long id, long amount) {
         validateUser(id);
         validateAmount(amount);
 
@@ -36,7 +36,7 @@ public class PointService {
         return userPointRepository.insertOrUpdate(id, userPoint.point() + amount);
     }
 
-    public UserPoint usePoint(long id, long amount) {
+    public synchronized UserPoint usePoint(long id, long amount) {
         validateUser(id);
         validateAmount(amount);
 
