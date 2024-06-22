@@ -5,6 +5,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -14,7 +16,7 @@ public class PointService {
 
     private final UserPointRepository userPointRepository;
     private final PointHistoryRepository pointHistoryRepository;
-    private final Lock lock = new ReentrantLock();
+    private final ConcurrentMap<Long, ReentrantLock> lockMap = new ConcurrentHashMap<>();
 
     public UserPoint getPoint(long id) {
         validateUser(id);
@@ -29,6 +31,7 @@ public class PointService {
     }
 
     public UserPoint chargePoint(long id, long amount) {
+        Lock lock = getLockForUser(id);
         lock.lock();
 
         validateUser(id);
@@ -42,10 +45,12 @@ public class PointService {
             return userPointRepository.insertOrUpdate(id, userPoint.point() + amount);
         } finally {
             lock.unlock();
+            releaseLockForUser(id);
         }
     }
 
     public UserPoint usePoint(long id, long amount) {
+        Lock lock = getLockForUser(id);
         lock.lock();
 
         validateUser(id);
@@ -62,6 +67,7 @@ public class PointService {
             return userPointRepository.insertOrUpdate(id, userPoint.point() - amount);
         } finally {
             lock.unlock();
+            releaseLockForUser(id);
         }
     }
 
@@ -75,5 +81,13 @@ public class PointService {
         if (amount <= 0) {
             throw new IllegalArgumentException("0원 이하로 요청할 수 없습니다.");
         }
+    }
+
+    private ReentrantLock getLockForUser(long id) {
+        return lockMap.computeIfAbsent(id, k -> new ReentrantLock());
+    }
+
+    private void releaseLockForUser(long id) {
+        lockMap.computeIfPresent(id, (k, lock) -> lock.hasQueuedThreads() ? lock : null);
     }
 }
