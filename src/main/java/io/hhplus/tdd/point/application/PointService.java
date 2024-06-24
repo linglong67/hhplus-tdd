@@ -1,6 +1,7 @@
 package io.hhplus.tdd.point.application;
 
 import io.hhplus.tdd.point.domain.*;
+import io.hhplus.tdd.util.LockManager;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -12,6 +13,7 @@ public class PointService {
 
     private final UserPointRepository userPointRepository;
     private final PointHistoryRepository pointHistoryRepository;
+    private final LockManager lockManager;
 
     public UserPoint getPoint(long id) {
         validateUser(id);
@@ -26,17 +28,25 @@ public class PointService {
     }
 
     public UserPoint chargePoint(long id, long amount) {
+        lockManager.lock(id);
+
         validateUser(id);
         validateAmount(amount);
 
         UserPoint userPoint = userPointRepository.selectById(id);
 
-        pointHistoryRepository.insert(id, amount, TransactionType.CHARGE, System.currentTimeMillis());
+        try {
+            pointHistoryRepository.insert(id, amount, TransactionType.CHARGE, System.currentTimeMillis());
 
-        return userPointRepository.insertOrUpdate(id, userPoint.point() + amount);
+            return userPointRepository.insertOrUpdate(id, userPoint.point() + amount);
+        } finally {
+            lockManager.unlock(id);
+        }
     }
 
     public UserPoint usePoint(long id, long amount) {
+        lockManager.lock(id);
+
         validateUser(id);
         validateAmount(amount);
 
@@ -45,9 +55,13 @@ public class PointService {
             throw new IllegalStateException("잔액을 초과하여 사용할 수 없습니다.");
         }
 
-        pointHistoryRepository.insert(id, amount, TransactionType.USE, System.currentTimeMillis());
+        try {
+            pointHistoryRepository.insert(id, amount, TransactionType.USE, System.currentTimeMillis());
 
-        return userPointRepository.insertOrUpdate(id, userPoint.point() - amount);
+            return userPointRepository.insertOrUpdate(id, userPoint.point() - amount);
+        } finally {
+            lockManager.unlock(id);
+        }
     }
 
     private void validateUser(long id) {

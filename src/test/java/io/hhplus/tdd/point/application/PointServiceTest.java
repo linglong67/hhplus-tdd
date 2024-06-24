@@ -1,6 +1,7 @@
 package io.hhplus.tdd.point.application;
 
 import io.hhplus.tdd.point.domain.*;
+import io.hhplus.tdd.util.LockManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -28,10 +29,13 @@ public class PointServiceTest {
     @Mock
     private PointHistoryRepository pointHistoryRepository;
 
+    @Mock
+    private LockManager lockManager;
+
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        pointService = new PointService(userPointRepository, pointHistoryRepository);
+        pointService = new PointService(userPointRepository, pointHistoryRepository, lockManager);
     }
 
     @Test
