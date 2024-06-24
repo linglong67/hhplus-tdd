@@ -1,12 +1,11 @@
 package io.hhplus.tdd.point.application;
 
 import io.hhplus.tdd.point.domain.*;
+import io.hhplus.tdd.util.LockManager;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 
 @Service
 @RequiredArgsConstructor
@@ -14,7 +13,7 @@ public class PointService {
 
     private final UserPointRepository userPointRepository;
     private final PointHistoryRepository pointHistoryRepository;
-    private final Lock lock = new ReentrantLock();
+    private final LockManager lockManager;
 
     public UserPoint getPoint(long id) {
         validateUser(id);
@@ -29,7 +28,7 @@ public class PointService {
     }
 
     public UserPoint chargePoint(long id, long amount) {
-        lock.lock();
+        lockManager.lock(id);
 
         validateUser(id);
         validateAmount(amount);
@@ -41,12 +40,12 @@ public class PointService {
 
             return userPointRepository.insertOrUpdate(id, userPoint.point() + amount);
         } finally {
-            lock.unlock();
+            lockManager.unlock(id);
         }
     }
 
     public UserPoint usePoint(long id, long amount) {
-        lock.lock();
+        lockManager.lock(id);
 
         validateUser(id);
         validateAmount(amount);
@@ -61,7 +60,7 @@ public class PointService {
 
             return userPointRepository.insertOrUpdate(id, userPoint.point() - amount);
         } finally {
-            lock.unlock();
+            lockManager.unlock(id);
         }
     }
 
